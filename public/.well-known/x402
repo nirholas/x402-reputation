@@ -1,0 +1,293 @@
+{
+  "x402Version": 1,
+  "name": "x402-reputation",
+  "description": "Did the merchant actually deliver? Reliability scores computed from signed fulfillment attestations",
+  "homepage": "https://nirholas.github.io/x402-reputation/",
+  "skill": "skill.md",
+  "networks": [
+    "base-sepolia",
+    "base",
+    "solana-devnet",
+    "solana"
+  ],
+  "payTo": {
+    "evm": "0x40252CFDF8B20Ed757D61ff157719F33Ec332402",
+    "solana": "WwwuGbqHrwF5RG89KhUbmRWEvjnRH9k5kVM5p7T3WwW"
+  },
+  "facilitator": "https://x402.org/facilitator",
+  "resources": [
+    {
+      "resource": "GET /score/:merchantId",
+      "description": "Signed reliability report for a merchant, computed from fulfillment attestations: score, fulfillment rate, refund rate, outcome breakdown, attestor spread across rails, recent sample, and confidence.",
+      "price": "$0.001",
+      "network": "base-sepolia",
+      "asset": "USDC",
+      "accepts": [
+        {
+          "scheme": "exact",
+          "network": "base-sepolia",
+          "asset": "USDC",
+          "payTo": "0x40252CFDF8B20Ed757D61ff157719F33Ec332402",
+          "price": "$0.001"
+        },
+        {
+          "scheme": "exact",
+          "network": "solana-devnet",
+          "asset": "USDC",
+          "payTo": "WwwuGbqHrwF5RG89KhUbmRWEvjnRH9k5kVM5p7T3WwW",
+          "price": "$0.001"
+        }
+      ],
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "merchantId": {
+            "type": "string"
+          },
+          "document": {
+            "const": "x402-reputation/score"
+          },
+          "score": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100
+          },
+          "grade": {
+            "type": "string",
+            "enum": [
+              "A",
+              "B",
+              "C",
+              "D",
+              "F"
+            ]
+          },
+          "fulfillmentRate": {
+            "type": "number"
+          },
+          "refundRate": {
+            "type": "number"
+          },
+          "failureRate": {
+            "type": "number"
+          },
+          "attestations": {
+            "type": "integer"
+          },
+          "distinctAttestors": {
+            "type": "integer"
+          },
+          "attestorsByRail": {
+            "type": "object"
+          },
+          "outcomes": {
+            "type": "object"
+          },
+          "volumeAttested": {
+            "type": "string"
+          },
+          "firstSeen": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "lastSeen": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "confidence": {
+            "type": "string",
+            "enum": [
+              "none",
+              "low",
+              "medium",
+              "high"
+            ]
+          },
+          "method": {
+            "type": "object",
+            "description": "The exact scoring parameters used — half-life, attestor cap, outcome credits"
+          },
+          "sample": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "computedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "signature": {
+            "type": "string"
+          },
+          "algorithm": {
+            "const": "HMAC-SHA256"
+          }
+        }
+      }
+    },
+    {
+      "resource": "POST /attest",
+      "description": "Record a signed fulfillment attestation linking a settled payment (tx hash on either rail) to its outcome. Returns the signed record.",
+      "price": "$0.001",
+      "network": "base-sepolia",
+      "asset": "USDC",
+      "accepts": [
+        {
+          "scheme": "exact",
+          "network": "base-sepolia",
+          "asset": "USDC",
+          "payTo": "0x40252CFDF8B20Ed757D61ff157719F33Ec332402",
+          "price": "$0.001"
+        },
+        {
+          "scheme": "exact",
+          "network": "solana-devnet",
+          "asset": "USDC",
+          "payTo": "WwwuGbqHrwF5RG89KhUbmRWEvjnRH9k5kVM5p7T3WwW",
+          "price": "$0.001"
+        }
+      ],
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "attestationId": {
+            "type": "string"
+          },
+          "document": {
+            "const": "x402-reputation/attestation"
+          },
+          "merchantId": {
+            "type": "string"
+          },
+          "outcome": {
+            "type": "string",
+            "enum": [
+              "fulfilled",
+              "partial",
+              "failed",
+              "refunded"
+            ]
+          },
+          "payment": {
+            "type": "object",
+            "properties": {
+              "rail": {
+                "type": "string",
+                "enum": [
+                  "evm",
+                  "solana",
+                  "unknown"
+                ]
+              },
+              "network": {
+                "type": "string"
+              },
+              "transaction": {
+                "type": "string"
+              },
+              "amount": {
+                "type": "string"
+              }
+            }
+          },
+          "attestor": {
+            "type": "object",
+            "description": "Dual-rail wallet identity",
+            "properties": {
+              "rail": {
+                "type": "string",
+                "enum": [
+                  "evm",
+                  "solana"
+                ]
+              },
+              "address": {
+                "type": "string",
+                "description": "Lowercased 0x address, or base58 Solana pubkey"
+              }
+            }
+          },
+          "note": {
+            "type": "string"
+          },
+          "attestedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "signature": {
+            "type": "string"
+          },
+          "algorithm": {
+            "const": "HMAC-SHA256"
+          }
+        }
+      }
+    },
+    {
+      "resource": "GET /merchants",
+      "description": "Every merchant with attestations on file, so you know which ids are worth scoring.",
+      "price": "$0",
+      "network": "base-sepolia",
+      "asset": "USDC",
+      "accepts": [],
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "merchants": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          }
+        }
+      }
+    },
+    {
+      "resource": "GET /attestations/:id",
+      "description": "One signed attestation record, so a report's sample can be re-checked individually.",
+      "price": "$0",
+      "network": "base-sepolia",
+      "asset": "USDC",
+      "accepts": [],
+      "outputSchema": {
+        "type": "object"
+      }
+    },
+    {
+      "resource": "POST /verify",
+      "description": "Verify the HMAC-SHA256 signature of any attestation or score report.",
+      "price": "$0",
+      "network": "base-sepolia",
+      "asset": "USDC",
+      "accepts": [],
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "valid": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    {
+      "resource": "GET /health",
+      "description": "Liveness probe.",
+      "price": "$0",
+      "network": "base-sepolia",
+      "asset": "USDC",
+      "accepts": [],
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean"
+          },
+          "service": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  ]
+}

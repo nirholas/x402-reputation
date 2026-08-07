@@ -1,0 +1,828 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "x402-reputation",
+    "version": "0.1.0",
+    "description": "Did the merchant actually deliver? Reliability scores computed from signed fulfillment attestations\n\nPaid routes are settled with x402 (HTTP 402) in USDC on **Base or Solana** — the client picks the rail from the 402 `accepts` array.",
+    "license": {
+      "name": "Apache-2.0",
+      "url": "https://www.apache.org/licenses/LICENSE-2.0"
+    },
+    "contact": {
+      "name": "nirholas",
+      "email": "nichxbt@gmail.com"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:4024",
+      "description": "Local development"
+    },
+    {
+      "url": "https://{host}",
+      "description": "Self-hosted",
+      "variables": {
+        "host": {
+          "default": "example.com"
+        }
+      }
+    }
+  ],
+  "tags": [
+    {
+      "name": "paid",
+      "description": "x402-paid routes — the artifact is returned in the 200 body"
+    },
+    {
+      "name": "free",
+      "description": "Free routes"
+    }
+  ],
+  "paths": {
+    "/score/{merchantId}": {
+      "get": {
+        "summary": "Buy a merchant's signed reliability report: score, fulfillment/refund/failure rates, attestor spread, a sample of recent attestations, and confidence.",
+        "description": "Buy a merchant's signed reliability report: score, fulfillment/refund/failure rates, attestor spread, a sample of recent attestations, and confidence. Paid: $0.001 in USDC on Base or Solana (x402).",
+        "operationId": "scoreMerchant",
+        "tags": [
+          "paid"
+        ],
+        "parameters": [
+          {
+            "name": "merchantId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Domain, payTo address, or service slug — 2-64 chars of `[a-z0-9._:-]`"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Reliability report (fulfillment rate, refund rate, sample attestations)",
+            "headers": {
+              "X-PAYMENT-RESPONSE": {
+                "description": "Base64 settlement receipt: { rail, network, transaction, payer }",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "merchantId": {
+                      "type": "string"
+                    },
+                    "document": {
+                      "const": "x402-reputation/score"
+                    },
+                    "score": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 100
+                    },
+                    "grade": {
+                      "type": "string",
+                      "enum": [
+                        "A",
+                        "B",
+                        "C",
+                        "D",
+                        "F"
+                      ]
+                    },
+                    "fulfillmentRate": {
+                      "type": "number"
+                    },
+                    "refundRate": {
+                      "type": "number"
+                    },
+                    "failureRate": {
+                      "type": "number"
+                    },
+                    "attestations": {
+                      "type": "integer"
+                    },
+                    "distinctAttestors": {
+                      "type": "integer"
+                    },
+                    "attestorsByRail": {
+                      "type": "object"
+                    },
+                    "outcomes": {
+                      "type": "object"
+                    },
+                    "volumeAttested": {
+                      "type": "string"
+                    },
+                    "firstSeen": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "lastSeen": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "confidence": {
+                      "type": "string",
+                      "enum": [
+                        "none",
+                        "low",
+                        "medium",
+                        "high"
+                      ]
+                    },
+                    "method": {
+                      "type": "object",
+                      "description": "The exact scoring parameters used — half-life, attestor cap, outcome credits"
+                    },
+                    "sample": {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      }
+                    },
+                    "computedAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "signature": {
+                      "type": "string"
+                    },
+                    "algorithm": {
+                      "const": "HMAC-SHA256"
+                    }
+                  }
+                },
+                "example": {
+                  "merchantId": "osteria-fiorentina.example",
+                  "document": "x402-reputation/score",
+                  "score": 88,
+                  "grade": "B",
+                  "fulfillmentRate": 0.833,
+                  "refundRate": 0.083,
+                  "failureRate": 0.083,
+                  "attestations": 12,
+                  "distinctAttestors": 6,
+                  "attestorsByRail": {
+                    "evm": 4,
+                    "solana": 2
+                  },
+                  "outcomes": {
+                    "fulfilled": 10,
+                    "partial": 0,
+                    "failed": 1,
+                    "refunded": 1
+                  },
+                  "volumeAttested": "$8.40",
+                  "firstSeen": "2025-12-02T18:11:00.000Z",
+                  "lastSeen": "2026-01-12T11:04:00.000Z",
+                  "confidence": "high",
+                  "method": {
+                    "halfLifeDays": 30,
+                    "maxAttestorShare": 0.25,
+                    "outcomeCredit": {
+                      "fulfilled": 1,
+                      "partial": 0.5,
+                      "refunded": 0.25,
+                      "failed": 0
+                    }
+                  },
+                  "sample": [
+                    {
+                      "attestationId": "att_3b7c1e05-49a2-4f6d-8c31-0a5e7d9b2f14",
+                      "document": "x402-reputation/attestation",
+                      "merchantId": "osteria-fiorentina.example",
+                      "outcome": "fulfilled",
+                      "payment": {
+                        "rail": "solana",
+                        "network": "solana-devnet",
+                        "transaction": "5Kq7xJ2mN…signature…",
+                        "amount": "$0.75"
+                      },
+                      "attestor": {
+                        "rail": "solana",
+                        "address": "WwwuGbqHrwF5RG89KhUbmRWEvjnRH9k5kVM5p7T3WwW"
+                      },
+                      "note": "Table was held, seated on time.",
+                      "attestedAt": "2026-01-12T11:04:00.000Z"
+                    }
+                  ],
+                  "computedAt": "2026-01-13T09:00:00.000Z",
+                  "signature": "c40b…hex hmac…",
+                  "algorithm": "HMAC-SHA256",
+                  "settlement": {
+                    "rail": "evm",
+                    "network": "base-sepolia",
+                    "transaction": "0xabc…",
+                    "payer": "0xPayer…",
+                    "amount": "1000"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed merchantId",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "Payment required — dual-rail x402 challenge listing a Base (EVM) and a Solana entry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentRequired"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Nothing on file for that merchant — not charged",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/attest": {
+      "post": {
+        "summary": "Record what happened after a payment settled. Returns the signed attestation record linking the payment tx to the outcome.",
+        "description": "Record what happened after a payment settled. Returns the signed attestation record linking the payment tx to the outcome. Paid: $0.001 in USDC on Base or Solana (x402).",
+        "operationId": "createAttestation",
+        "tags": [
+          "paid"
+        ],
+        "responses": {
+          "201": {
+            "description": "Signed attestation record (links payment tx + outcome)",
+            "headers": {
+              "X-PAYMENT-RESPONSE": {
+                "description": "Base64 settlement receipt: { rail, network, transaction, payer }",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "attestationId": {
+                      "type": "string"
+                    },
+                    "document": {
+                      "const": "x402-reputation/attestation"
+                    },
+                    "merchantId": {
+                      "type": "string"
+                    },
+                    "outcome": {
+                      "type": "string",
+                      "enum": [
+                        "fulfilled",
+                        "partial",
+                        "failed",
+                        "refunded"
+                      ]
+                    },
+                    "payment": {
+                      "type": "object",
+                      "properties": {
+                        "rail": {
+                          "type": "string",
+                          "enum": [
+                            "evm",
+                            "solana",
+                            "unknown"
+                          ]
+                        },
+                        "network": {
+                          "type": "string"
+                        },
+                        "transaction": {
+                          "type": "string"
+                        },
+                        "amount": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "attestor": {
+                      "type": "object",
+                      "description": "Dual-rail wallet identity",
+                      "properties": {
+                        "rail": {
+                          "type": "string",
+                          "enum": [
+                            "evm",
+                            "solana"
+                          ]
+                        },
+                        "address": {
+                          "type": "string",
+                          "description": "Lowercased 0x address, or base58 Solana pubkey"
+                        }
+                      }
+                    },
+                    "note": {
+                      "type": "string"
+                    },
+                    "attestedAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "signature": {
+                      "type": "string"
+                    },
+                    "algorithm": {
+                      "const": "HMAC-SHA256"
+                    }
+                  }
+                },
+                "example": {
+                  "attestationId": "att_3b7c1e05-49a2-4f6d-8c31-0a5e7d9b2f14",
+                  "document": "x402-reputation/attestation",
+                  "merchantId": "osteria-fiorentina.example",
+                  "outcome": "fulfilled",
+                  "payment": {
+                    "rail": "solana",
+                    "network": "solana-devnet",
+                    "transaction": "5Kq7xJ2mN…signature…",
+                    "amount": "$0.75"
+                  },
+                  "attestor": {
+                    "rail": "solana",
+                    "address": "WwwuGbqHrwF5RG89KhUbmRWEvjnRH9k5kVM5p7T3WwW"
+                  },
+                  "note": "Table was held, seated on time.",
+                  "attestedAt": "2026-01-12T11:04:00.000Z",
+                  "signature": "8fa2…hex hmac…",
+                  "algorithm": "HMAC-SHA256"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "payment.transaction is required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "Payment required — dual-rail x402 challenge listing a Base (EVM) and a Solana entry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentRequired"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "This attestor already attested to this payment — not charged",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "merchantId",
+                  "attestor",
+                  "payment"
+                ],
+                "properties": {
+                  "merchantId": {
+                    "type": "string"
+                  },
+                  "outcome": {
+                    "type": "string",
+                    "enum": [
+                      "fulfilled",
+                      "partial",
+                      "failed",
+                      "refunded"
+                    ]
+                  },
+                  "payment": {
+                    "type": "object",
+                    "required": [
+                      "transaction"
+                    ],
+                    "properties": {
+                      "transaction": {
+                        "type": "string"
+                      },
+                      "network": {
+                        "type": "string"
+                      },
+                      "amount": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "attestor": {
+                    "type": "string"
+                  },
+                  "note": {
+                    "type": "string",
+                    "maxLength": 280
+                  }
+                }
+              },
+              "example": {
+                "merchantId": "osteria-fiorentina.example",
+                "outcome": "fulfilled",
+                "payment": {
+                  "network": "solana-devnet",
+                  "transaction": "5Kq7xJ2mN…",
+                  "amount": "$0.75"
+                },
+                "attestor": "WwwuGbqHrwF5RG89KhUbmRWEvjnRH9k5kVM5p7T3WwW",
+                "note": "Table was held, seated on time."
+              }
+            }
+          }
+        }
+      }
+    },
+    "/merchants": {
+      "get": {
+        "summary": "Every merchant with attestations on file, so you know which ids are worth scoring.",
+        "description": "Every merchant with attestations on file, so you know which ids are worth scoring. Free.",
+        "operationId": "merchantIndex",
+        "tags": [
+          "free"
+        ],
+        "responses": {
+          "200": {
+            "description": "Merchant index with attestation counts",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "merchants": {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "merchants": [
+                    {
+                      "merchantId": "osteria-fiorentina.example",
+                      "attestations": 12,
+                      "lastSeen": "2026-01-12T11:04:00.000Z"
+                    },
+                    {
+                      "merchantId": "slowship.example",
+                      "attestations": 3,
+                      "lastSeen": "2026-01-05T08:20:00.000Z"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/attestations/{id}": {
+      "get": {
+        "summary": "One signed attestation record, so a report's sample can be re-checked individually.",
+        "description": "One signed attestation record, so a report's sample can be re-checked individually. Free.",
+        "operationId": "getAttestation",
+        "tags": [
+          "free"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "The attestationId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Signed attestation record",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "attestationId": "att_3b7c1e05-49a2-4f6d-8c31-0a5e7d9b2f14",
+                  "document": "x402-reputation/attestation",
+                  "merchantId": "osteria-fiorentina.example",
+                  "outcome": "fulfilled",
+                  "payment": {
+                    "rail": "solana",
+                    "network": "solana-devnet",
+                    "transaction": "5Kq7xJ2mN…signature…",
+                    "amount": "$0.75"
+                  },
+                  "attestor": {
+                    "rail": "solana",
+                    "address": "WwwuGbqHrwF5RG89KhUbmRWEvjnRH9k5kVM5p7T3WwW"
+                  },
+                  "note": "Table was held, seated on time.",
+                  "attestedAt": "2026-01-12T11:04:00.000Z",
+                  "signature": "8fa2…hex hmac…",
+                  "algorithm": "HMAC-SHA256"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown attestationId",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/verify": {
+      "post": {
+        "summary": "Verify the HMAC-SHA256 signature of any attestation or score report.",
+        "description": "Verify the HMAC-SHA256 signature of any attestation or score report. Free.",
+        "operationId": "verifyArtifact",
+        "tags": [
+          "free"
+        ],
+        "responses": {
+          "200": {
+            "description": "`{ valid: true | false }`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "valid": {
+                      "type": "boolean"
+                    }
+                  }
+                },
+                "example": {
+                  "valid": true
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "attestationId": "att_3b7c1e05-49a2-4f6d-8c31-0a5e7d9b2f14",
+                "document": "x402-reputation/attestation",
+                "merchantId": "osteria-fiorentina.example",
+                "outcome": "fulfilled",
+                "payment": {
+                  "rail": "solana",
+                  "network": "solana-devnet",
+                  "transaction": "5Kq7xJ2mN…signature…",
+                  "amount": "$0.75"
+                },
+                "attestor": {
+                  "rail": "solana",
+                  "address": "WwwuGbqHrwF5RG89KhUbmRWEvjnRH9k5kVM5p7T3WwW"
+                },
+                "note": "Table was held, seated on time.",
+                "attestedAt": "2026-01-12T11:04:00.000Z",
+                "signature": "8fa2…hex hmac…",
+                "algorithm": "HMAC-SHA256"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "summary": "Liveness probe.",
+        "description": "Liveness probe. Free.",
+        "operationId": "health",
+        "tags": [
+          "free"
+        ],
+        "responses": {
+          "200": {
+            "description": "`{ ok: true }`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean"
+                    },
+                    "service": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "example": {
+                  "ok": true,
+                  "service": "x402-reputation"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "PaymentRequired": {
+        "type": "object",
+        "description": "x402 challenge. `accepts` always contains both an EVM and a Solana entry.",
+        "required": [
+          "x402Version",
+          "accepts"
+        ],
+        "properties": {
+          "x402Version": {
+            "type": "integer",
+            "const": 1
+          },
+          "error": {
+            "type": "string"
+          },
+          "accepts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PaymentRequirements"
+            }
+          }
+        },
+        "example": {
+          "x402Version": 1,
+          "error": "X-PAYMENT header is required",
+          "accepts": [
+            {
+              "scheme": "exact",
+              "network": "base-sepolia",
+              "maxAmountRequired": "10000",
+              "resource": "http://localhost:4024/score/:merchantId",
+              "description": "Buy a merchant's signed reliability report: score, fulfillment/refund/failure rates, attestor spread, a sample of recent attestations, and confidence.",
+              "mimeType": "application/json",
+              "payTo": "0x40252CFDF8B20Ed757D61ff157719F33Ec332402",
+              "maxTimeoutSeconds": 120,
+              "asset": "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
+              "extra": {
+                "name": "USDC",
+                "version": "2"
+              }
+            },
+            {
+              "scheme": "exact",
+              "network": "solana-devnet",
+              "maxAmountRequired": "10000",
+              "resource": "http://localhost:4024/score/:merchantId",
+              "description": "Buy a merchant's signed reliability report: score, fulfillment/refund/failure rates, attestor spread, a sample of recent attestations, and confidence.",
+              "mimeType": "application/json",
+              "payTo": "WwwuGbqHrwF5RG89KhUbmRWEvjnRH9k5kVM5p7T3WwW",
+              "maxTimeoutSeconds": 120,
+              "asset": "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU",
+              "extra": {
+                "feePayer": "CKPKJWNdJEqa81x7CkZ14BVPiY6y16Sxs7owznqtWYp5"
+              }
+            }
+          ]
+        }
+      },
+      "PaymentRequirements": {
+        "type": "object",
+        "required": [
+          "scheme",
+          "network",
+          "maxAmountRequired",
+          "resource",
+          "description",
+          "mimeType",
+          "payTo",
+          "maxTimeoutSeconds",
+          "asset"
+        ],
+        "properties": {
+          "scheme": {
+            "type": "string",
+            "const": "exact"
+          },
+          "network": {
+            "type": "string",
+            "enum": [
+              "base-sepolia",
+              "base",
+              "solana-devnet",
+              "solana"
+            ]
+          },
+          "maxAmountRequired": {
+            "type": "string",
+            "description": "Amount in USDC base units (6 decimals)"
+          },
+          "resource": {
+            "type": "string",
+            "format": "uri"
+          },
+          "description": {
+            "type": "string"
+          },
+          "mimeType": {
+            "type": "string"
+          },
+          "payTo": {
+            "type": "string",
+            "description": "EVM 0x address or Solana base58 pubkey depending on the rail"
+          },
+          "maxTimeoutSeconds": {
+            "type": "integer"
+          },
+          "asset": {
+            "type": "string",
+            "description": "USDC contract address or SPL mint"
+          },
+          "outputSchema": {
+            "type": "object"
+          },
+          "extra": {
+            "type": "object",
+            "description": "EIP-712 domain on the EVM rail; `{ feePayer }` sponsor account on the Solana rail"
+          }
+        }
+      },
+      "Signature": {
+        "type": "object",
+        "description": "Every artifact carries an HMAC-SHA256 signature over its canonical JSON.",
+        "properties": {
+          "signature": {
+            "type": "string",
+            "description": "hex HMAC-SHA256"
+          },
+          "algorithm": {
+            "type": "string",
+            "const": "HMAC-SHA256"
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

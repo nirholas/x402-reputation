@@ -1,0 +1,98 @@
+# For AI agents — x402-reputation
+
+## What an agent gets
+
+Reliability scoring for x402 merchants, built from **signed fulfillment attestations**. A buyer posts what happened after a payment settled — `fulfilled`, `partial`, `failed` or `refunded` — referencing the transaction hash on either rail, and gets a signed attestation record back. Reading a merchant's score returns a signed reliability report: fulfillment rate, refund rate, outcome breakdown, attestor spread across rails, a sample of recent attestations, and an explicit `confidence` level. Scores are recency-decayed and capped per attestor, so a stale reputation fades and one loud wallet cannot swing a merchant's number.
+
+Every paid route hands back the artifact **in the 200 body**. There is no
+"payment accepted, check back later" path to babysit.
+
+## 1. Discover
+
+Two machine-readable entry points:
+
+| Artifact | URL | Purpose |
+|---|---|---|
+| Skill file | [`skill.md`](https://github.com/nirholas/x402-reputation/blob/main/skill.md) | Endpoints, prices, request/response schemas, error codes — drop it into an agent's tool context |
+| Manifest | `{BASE_URL}/.well-known/x402` | The x402 discovery format: resources, prices, accepted networks, output schemas |
+| OpenAPI | [`openapi.json`](https://github.com/nirholas/x402-reputation/blob/main/openapi.json) | OpenAPI 3.1 including the dual-rail 402 response |
+
+```bash
+curl -s http://localhost:4024/.well-known/x402 | jq '.resources[] | {resource, price, accepts}'
+```
+
+## 2. Pay — pick a rail
+
+An unpaid call to a paid route returns `402` with two `accepts` entries:
+
+| Rail | Network | Asset | payTo |
+|---|---|---|---|
+| EVM | `base-sepolia` / `base` | USDC `0x036CbD…dCF7e` | `0x40252CFDF8B20Ed757D61ff157719F33Ec332402` |
+| Solana | `solana-devnet` / `solana` | USDC `4zMMC9…ncDU` | `WwwuGbqHrwF5RG89KhUbmRWEvjnRH9k5kVM5p7T3WwW` |
+
+An agent holding an EVM key uses the first entry; an agent holding a Solana
+keypair uses the second. Both are verified and settled by the same facilitator
+(`https://x402.org/facilitator`), so the merchant side is identical.
+
+```ts
+import { wrapFetchWithPayment } from "x402-fetch";
+import { privateKeyToAccount } from "viem/accounts";
+
+const payFetch = wrapFetchWithPayment(fetch, privateKeyToAccount(process.env.PRIVATE_KEY));
+
+// free: which merchants have evidence on file?
+const { merchants } = await (await fetch(`${BASE}/merchants`)).json();
+
+// paid ($0.001): buy the record before committing to a purchase
+const report = await (await payFetch(`${BASE}/score/${merchantId}`)).json();
+if (report.score < 70 || report.confidence === "low") return "look elsewhere";
+
+// paid ($0.001): after your own purchase settles, put the outcome on record
+await payFetch(`${BASE}/attest`, {
+  method: "POST", headers: { "content-type": "application/json" },
+  body: JSON.stringify({
+    merchantId, outcome: "fulfilled",
+    payment: { network: settlement.network, transaction: settlement.transaction, amount: "$0.75" },
+    attestor: myWallet,   // EVM address or Solana pubkey
+  }),
+});
+```
+
+On the Solana side, the `accepts` entry carries `extra.feePayer` — the
+facilitator's sponsor account that pays the SOL network fee, so an agent needs
+only USDC, never SOL for gas.
+
+## 3. Verify what you bought
+
+Artifacts are HMAC-SHA256 signed over canonical JSON. Re-check any of them for
+free:
+
+```bash
+curl -s -X POST http://localhost:4024/verify -H 'content-type: application/json' -d @artifact.json
+# {"valid": true}
+```
+
+The `X-PAYMENT-RESPONSE` header on every paid 200 carries the settlement
+receipt, so an agent can log `{ rail, network, transaction, payer }` next to the
+artifact it paid for.
+
+## 4. MCP integration
+
+[`examples/mcp-tool.md`](https://github.com/nirholas/x402-reputation/blob/main/examples/mcp-tool.md) wraps these
+routes as MCP tools for Claude Desktop / Claude Code, including the
+`claude_desktop_config.json` block.
+
+## 5. Listing
+
+Deploy it, then list the deployment so paying agents can find it:
+
+- **[x402scan.com](https://x402scan.com)** — submit the base URL; it reads `/.well-known/x402`.
+- **x402 Bazaar** — the facilitator-hosted resource directory; the manifest is already in the right shape.
+- **[agentic.market](https://agentic.market)** — agent-facing marketplace listing; point it at `skill.md`.
+
+Keep `/.well-known/x402` reachable without payment (it is, by design) and keep
+`resource` URLs in the 402 matching your public hostname.
+
+## Contact
+
+nichxbt@gmail.com

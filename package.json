@@ -1,0 +1,50 @@
+{
+  "name": "x402-reputation",
+  "version": "0.1.0",
+  "description": "Did the merchant actually deliver? Reliability scores computed from signed fulfillment attestations",
+  "license": "Apache-2.0",
+  "author": "nirholas <nichxbt@gmail.com>",
+  "type": "module",
+  "main": "dist/server.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nirholas/x402-reputation"
+  },
+  "homepage": "https://nirholas.github.io/x402-reputation/",
+  "keywords": [
+    "x402",
+    "micropayments",
+    "usdc",
+    "solana",
+    "base",
+    "ai-agents",
+    "agentic-commerce",
+    "reputation",
+    "attestations",
+    "reliability",
+    "trust",
+    "scoring"
+  ],
+  "scripts": {
+    "dev": "tsx src/server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "client": "tsx examples/agent-client.ts"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "express": "^4.21.2",
+    "x402": "^1.2.0"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node": "^22.10.5",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3",
+    "viem": "^2.21.54",
+    "x402-fetch": "^1.2.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
