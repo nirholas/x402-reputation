@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>x402-reputation — Did the merchant actually deliver? Reliability scores computed from sign</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/favicon.svg">
+<meta name="description" content="Did the merchant actually deliver? Reliability scores computed from signed fulfillment attestations">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="x402-reputation">
+<meta property="og:title" content="x402-reputation — Did the merchant actually deliver? Reliability scores computed from sign">
+<meta property="og:description" content="Did the merchant actually deliver? Reliability scores computed from signed fulfillment attestations">
+<meta property="og:url" content="https://nirholas.github.io/x402-reputation/">
+<meta property="og:image" content="https://nirholas.github.io/x402-reputation/og.svg">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="x402-reputation — Did the merchant actually deliver? Reliability scores computed from sign">
+<meta name="twitter:description" content="Did the merchant actually deliver? Reliability scores computed from signed fulfillment attestations">
+<meta name="twitter:image" content="https://nirholas.github.io/x402-reputation/og.svg">
+<style>
+:root{--accent:#0052ff;--bg:#fff;--fg:#111418;--muted:#5b6470;--card:#f5f7fa;--border:#e3e7ee}
+@media (prefers-color-scheme:dark){:root{--bg:#0c0f14;--fg:#e8ecf2;--muted:#98a2b3;--card:#151a22;--border:#232b37}}
+*{box-sizing:border-box;margin:0}
+body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--fg);line-height:1.6;padding:0 20px}
+.wrap{max-width:720px;margin:0 auto;padding:56px 0}
+h1{font-size:2rem;letter-spacing:-.02em}
+h1 span{color:var(--accent)}
+.tag{color:var(--muted);margin:10px 0 26px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px 22px;margin-bottom:16px}
+h2{font-size:.78rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+ul{list-style:none;padding:0}
+li{padding:5px 0;border-bottom:1px solid var(--border);font-size:.92rem}
+li:last-child{border-bottom:0}
+code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.85rem;color:var(--accent)}
+.price{float:right;color:var(--muted);font-size:.82rem}
+a{color:var(--accent)}
+footer{margin-top:30px;font-size:.82rem;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>x402<span>-reputation</span></h1>
+<p class="tag">Did the merchant actually deliver? Reliability scores computed from signed fulfillment attestations</p>
+<div class="card">
+<h2>Paid routes</h2>
+<ul>
+<li><span class="price">$0.001</span><code>GET /score/{merchantId}</code> — Buy a merchant&#x27;s signed reliability report: score, fulfillment/refund/failure rates, attestor spread, a sample of recent attestations, and confidence</li>
+<li><span class="price">$0.001</span><code>POST /attest</code> — Record what happened after a payment settled</li>
+</ul>
+</div>
+<div class="card">
+<h2>Free routes</h2>
+<ul>
+<li><code>GET /merchants</code> — Every merchant with attestations on file, so you know which ids are worth scoring</li>
+<li><code>GET /attestations/{id}</code> — One signed attestation record, so a report&#x27;s sample can be re-checked individually</li>
+<li><code>POST /verify</code> — Verify the HMAC-SHA256 signature of any attestation or score report</li>
+<li><code>GET /health</code> — Liveness probe</li>
+</ul>
+</div>
+<p class="tag">Pay in USDC on <b>Base</b> or <b>Solana</b> — your client picks the rail. An unpaid
+request answers <code>402</code> with both options and the schema of what you are buying; retry with
+an <code>X-PAYMENT</code> header and the artifact comes back in the same round trip.</p>
+<footer>
+<a href="/openapi.json">OpenAPI</a> · <a href="/.well-known/x402">x402 manifest</a> ·
+<a href="https://github.com/nirholas/x402-reputation">source</a>
+</footer>
+</div>
+</body>
+</html>

@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { paywall, payToBanner, withSettlement } from "./payments.js";
+import { ROUTE_SCHEMAS } from "./schemas.js";
 import {
   createAttestation,
   getAttestation,
@@ -34,7 +35,7 @@ app.use(
       return {
         price: "$0.001",
         description: `Reliability report for merchant ${merchantId}`,
-        outputSchema: { type: "object", description: "Signed reliability report" },
+        outputSchema: ROUTE_SCHEMAS["GET /score/:merchantId"],
       };
     },
     "POST /attest": (req) => {
@@ -44,7 +45,7 @@ app.use(
       return {
         price: "$0.001",
         description: "Record a signed fulfillment attestation",
-        outputSchema: { type: "object", description: "Signed attestation record" },
+        outputSchema: ROUTE_SCHEMAS["POST /attest"],
       };
     },
   }),
