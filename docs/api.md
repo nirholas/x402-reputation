@@ -158,7 +158,7 @@ PRIVATE_KEY=0x... npm run client
 
 | Status | Code | Meaning |
 |---|---|---|
-| 404 | `NO_ATTESTATIONS` | Nothing on file for that merchant — not charged |
+| 404 | `NO_ATTESTATIONS` | Nothing on file for that merchant. The 402 challenge is returned before the lookup, so payment settles first — check the free `GET /merchants` |
 | 400 | `INVALID_MERCHANT_ID` | Malformed merchantId |
 
 ---
@@ -266,7 +266,7 @@ PRIVATE_KEY=0x... npm run client
 |---|---|---|
 | 400 | `INVALID_WALLET` | attestor is not an EVM address or Solana pubkey |
 | 400 | `MISSING_PAYMENT_TX` | payment.transaction is required |
-| 409 | `DUPLICATE_ATTESTATION` | This attestor already attested to this payment — not charged |
+| 409 | `DUPLICATE_ATTESTATION` | This attestor already attested to this payment. The 402 challenge is returned before the body is inspected, so payment settles first |
 
 ---
 

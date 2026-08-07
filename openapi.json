@@ -238,7 +238,7 @@
             }
           },
           "402": {
-            "description": "Payment required — dual-rail x402 challenge listing a Base (EVM) and a Solana entry.",
+            "description": "Payment required — dual-rail x402 challenge listing a Base (EVM) and a Solana entry. Returned before the merchant is looked up, so the route's terms are always discoverable.",
             "content": {
               "application/json": {
                 "schema": {
@@ -248,7 +248,7 @@
             }
           },
           "404": {
-            "description": "Nothing on file for that merchant — not charged",
+            "description": "Nothing on file for that merchant. Payment has already settled — list scoreable merchants with the free GET /merchants before paying.",
             "content": {
               "application/json": {
                 "schema": {
@@ -402,7 +402,7 @@
             }
           },
           "402": {
-            "description": "Payment required — dual-rail x402 challenge listing a Base (EVM) and a Solana entry.",
+            "description": "Payment required — dual-rail x402 challenge listing a Base (EVM) and a Solana entry. Returned before the body is inspected, so the route's terms are always discoverable.",
             "content": {
               "application/json": {
                 "schema": {
@@ -412,7 +412,7 @@
             }
           },
           "409": {
-            "description": "This attestor already attested to this payment — not charged",
+            "description": "This attestor already attested to this payment. Payment has already settled — duplicates are rejected after payment so the challenge is always reachable.",
             "content": {
               "application/json": {
                 "schema": {

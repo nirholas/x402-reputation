@@ -255,10 +255,16 @@ holding both rails:
 | 400 | `INVALID_WALLET` | `attestor` is neither an EVM address nor a Solana pubkey |
 | 400 | `INVALID_MERCHANT_ID` | `merchantId` is not 2-64 chars of `[a-z0-9._:-]` |
 | 400 | `MISSING_PAYMENT_TX` | `payment.transaction` is required — every attestation names a settled payment |
-| 404 | `NO_ATTESTATIONS` | Nothing on file for that merchant (**not charged**) |
+| 404 | `NO_ATTESTATIONS` | Nothing on file for that merchant — payment has settled, list `GET /merchants` first |
 | 404 | `ATTESTATION_NOT_FOUND` | Unknown attestationId |
-| 409 | `DUPLICATE_ATTESTATION` | This attestor already attested to this payment (**not charged**) |
+| 409 | `DUPLICATE_ATTESTATION` | This attestor already attested to this payment — payment has settled |
 | 400 | `BAD_REQUEST` | Malformed body |
+
+Both paid routes answer 402 with their payment terms **before** the merchant id is looked
+up and before the attestation body is inspected, so either route can be priced and probed
+without a merchant that already has attestations on file. The flip side is that payment
+settles before the artifact is attempted: list what is scoreable with the free
+`GET /merchants` before buying a report.
 
 ## Discovery
 

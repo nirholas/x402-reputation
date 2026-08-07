@@ -8,8 +8,6 @@ import { ROUTE_SCHEMAS } from "./schemas.js";
 import {
   createAttestation,
   getAttestation,
-  hasAttestations,
-  isDuplicate,
   merchantIndex,
   ReputationError,
   scoreMerchant,
@@ -24,29 +22,29 @@ const app = express();
 app.use(express.json({ limit: "64kb" }));
 
 // ---- x402 paywall ----------------------------------------------------------
-// Both routes are $0.001. The resolvers decline to charge for requests that
-// cannot produce an artifact — an unknown merchant, or a duplicate attestation
-// — so a caller never pays for a 404 or a 409.
+// Both routes are $0.001, and both quote that price unconditionally.
+//
+// The challenge comes first, always. An unpaid request is answered with 402 and
+// the full `accepts` array before the merchant id is looked up and before the
+// attestation body is inspected, so a discovery probe (or any agent) can read
+// these routes' payment terms without naming a merchant that already has
+// attestations on file. An unknown merchant (404) or a duplicate attestation
+// (409) is the handler's business, after payment — list what is scoreable with
+// the free `GET /merchants` first.
 app.use(
   paywall({
     "GET /score/:merchantId": (req) => {
       const merchantId = decodeURIComponent(req.path.split("/")[2] || "");
-      if (!hasAttestations(merchantId)) return null; // free 404
       return {
         price: "$0.001",
         description: `Reliability report for merchant ${merchantId}`,
         outputSchema: ROUTE_SCHEMAS["GET /score/:merchantId"],
       };
     },
-    "POST /attest": (req) => {
-      const body = (req.body ?? {}) as Record<string, unknown>;
-      const payment = (body.payment ?? {}) as Record<string, unknown>;
-      if (isDuplicate(body.merchantId, payment.transaction, body.attestor)) return null; // free 409
-      return {
-        price: "$0.001",
-        description: "Record a signed fulfillment attestation",
-        outputSchema: ROUTE_SCHEMAS["POST /attest"],
-      };
+    "POST /attest": {
+      price: "$0.001",
+      description: "Record a signed fulfillment attestation",
+      outputSchema: ROUTE_SCHEMAS["POST /attest"],
     },
   }),
 );

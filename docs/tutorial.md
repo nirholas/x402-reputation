@@ -160,7 +160,7 @@ comes from sample size and attestor spread:
 
 | Attestations | Distinct attestors | Confidence |
 |---|---|---|
-| 0 | — | `none` (free 404) |
+| 0 | — | `none` — the route 404s (after payment; check `GET /merchants` first) |
 | 1-2, or only 1 attestor | — | `low` |
 | 3-9, or 2-3 attestors | — | `medium` |
 | 10+ and 4+ attestors | — | `high` |
