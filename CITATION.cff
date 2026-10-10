@@ -1,0 +1,10 @@
+cff-version: 1.2.0
+message: If you use this software, please cite it as below.
+title: "x402-reputation"
+abstract: "Did the merchant actually deliver? Reliability scores computed from signed fulfillment attestations"
+license: Apache-2.0
+repository-code: "https://github.com/nirholas/x402-reputation"
+url: "https://three.ws"
+authors:
+  - name: three.ws
+    website: "https://three.ws"
