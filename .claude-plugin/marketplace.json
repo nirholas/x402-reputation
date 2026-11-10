@@ -1,0 +1,23 @@
+{
+  "name": "x402-reputation",
+  "owner": {
+    "name": "nirholas"
+  },
+  "description": "Merchant reliability scores computed from signed fulfillment attestations, served over x402.",
+  "plugins": [
+    {
+      "name": "x402-reputation",
+      "source": "./plugins/x402-reputation",
+      "description": "Merchant reliability scores computed from signed fulfillment attestations, served over x402.",
+      "category": "data",
+      "tags": [
+        "x402",
+        "reputation",
+        "attestations",
+        "merchant-score",
+        "usdc",
+        "ai-agents"
+      ]
+    }
+  ]
+}
