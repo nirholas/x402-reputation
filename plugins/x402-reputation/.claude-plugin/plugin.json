@@ -1,0 +1,19 @@
+{
+  "name": "x402-reputation",
+  "version": "0.1.0",
+  "description": "Merchant reliability scores computed from signed fulfillment attestations, served over x402.",
+  "author": {
+    "name": "nirholas"
+  },
+  "repository": "https://github.com/nirholas/x402-reputation",
+  "homepage": "https://nirholas.github.io/x402-reputation/",
+  "license": "Apache-2.0",
+  "keywords": [
+    "x402",
+    "reputation",
+    "attestations",
+    "merchant-score",
+    "usdc",
+    "ai-agents"
+  ]
+}
